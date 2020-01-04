@@ -5,9 +5,6 @@ namespace Buckets.Containers
 {
     abstract class Container
     {
-        public delegate void OverflowDel(string msg); //Event?
-        OverflowDel OFD = Overflow;
-
         #region Properties
         //Decision: Place properties inside base class or derived classes?
         private double minSize; //Technically only used for bucket. Move to bucket and override the Size property?
@@ -82,10 +79,10 @@ namespace Buckets.Containers
 
         public void Fill(double amount)
         {
-            double total = amount + Content;
-            if (total > Size) //Overflow
+            double total = amount + Content; //Calculate total of 
+            if (total > Size) //Check overflow
             {
-                OFD($"{Name} has overflowed {total - Size}.");
+                Console.WriteLine($"{Name} has overflowed {total - Size}.");
                 Content = Size;
             }
             else
@@ -93,18 +90,16 @@ namespace Buckets.Containers
                 Content = total;
             }
         }
-        public bool Transfer(Container from, Container to, int amount = 0)
+        public bool Transfer(Container source, Container target, int amount = null) //Transfer from source to target with possible value
         {
-            if (amount < from.content)
+            if(amount == null) { amount = source.Content; } //Check if amount was given, otherwise take amount in source
+            if (amount <= source.Content) //Check no overflow
             {
-                to.Fill(from.content);
+                target.Fill(amount);
+                source.Empty(amount);
                 return true;
             }
-            else { return false; }
-        }
-        public static void Overflow(string msg) //Delegate?
-        {
-            Console.WriteLine(msg);
+            else { return false; } //Overflow
         }
     }
 
