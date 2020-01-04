@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Buckets.Containers
 {
@@ -96,6 +92,15 @@ namespace Buckets.Containers
             {
                 Content = total;
             }
+        }
+        public bool Transfer(Container from, Container to, int amount = 0)
+        {
+            if (amount < from.content)
+            {
+                to.Fill(from.content);
+                return true;
+            }
+            else { return false; }
         }
         public static void Overflow(string msg) //Delegate?
         {
