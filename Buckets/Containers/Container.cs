@@ -8,88 +8,116 @@ namespace Buckets.Containers
         #region Properties
         static public bool AllowOverflow = false;
         //Decision: Place properties inside base class or derived classes?
-        private double minSize; //Technically only used for bucket. Move to bucket and override the Size property?
-        private double size;
-        private double content;
+        private double _minSize; //Technically only used for bucket. Move to bucket and override the Size property?
+        private double _size;
+        private double _content;
         public string Name { get; set; }
         protected double MinSize
         {
-            get { return minSize; }
+            get => _minSize;
             set
             {
-                if (MinSize < 0)
-                    minSize = 0;
+                if (value < 0)
+                    _minSize = 0;
                 else
-                    minSize = MinSize;
+                    _minSize = value;
             }
         }
-        public double Size
+        protected double Size
         {
-            get { return size; }
+            get => _size;
             set
             {
-                if (Size < MinSize)
-                    size = MinSize;
+                if (value < MinSize)
+                    _size = MinSize;
                 else
-                    size = Size;
+                    _size = value;
             }
         }
-        public double Content
+        protected double Content
         {
-            get { return content; }
+            get => _content;
             set
             {
-                if (Content > Size) //OVERFLOW
+                if (value > Size) //OVERFLOW
                 {
-                    Debug.WriteLine($"{Name} has overflown {Content - Size} on creation.");
-                    content = Size;
+                    Debug.WriteLine($"{Name} has overflown {value - Size} on creation.");
+                    _content = Size;
                 }
-                else if (Content < 0)
+                else if (value < 0)
                 {
-                    content = 0;
+                    _content = 0;
                 }
                 else
                 {
-                    content = Content;
+                    _content = value;
                 }
             }
         }
         #endregion
 
-        #region Emptying
+        #region Empty
+        /// <summary>
+        /// Empty the container entirely
+        /// </summary>
+        /// <returns>Returns true if succeeded</returns>
         public bool Empty()
         {
             Content = 0;
+            Console.WriteLine($"Emptied {Name}({Content}/{Size}).");
             return true;
         }
-        public bool Empty(double amount)
+        /// <summary>
+        /// Empty the container by an amount
+        /// </summary>
+        /// <param name="amount"></param>
+        /// <returns>Returns true if succeeded</returns>
+        public bool Empty(double amount) //Empty container by amount.
         {
             if (amount > Content) //Check if amount to remove exists
             {
+                Console.WriteLine($"Emptying cancelled, not enough ({amount}) in {Name}({Content}/{Size}).");
                 return false;
             }
             else
             {
                 Content -= amount;
+                Console.WriteLine($"Emptied {amount} from {Name}({Content}/{Size}).");
                 return true;
             }
         }
         #endregion
 
-        public bool Fill(double addedAmount)
+        #region Fill
+        /// <summary>
+        /// Fill up the container entirely
+        /// </summary>
+        /// <returns>Returns true if succeeded</returns>
+        public bool Fill()
         {
-            double total = addedAmount + Content; //Calculate total of 
+            Content = Size;
+            Console.WriteLine($"Filled {Name}({Content}/{Size}).");
+            return true;
+        }
+        /// <summary>
+        /// Fill up the container by amount
+        /// </summary>
+        /// <param name="addedAmount">Amount to Add</param>
+        /// <returns>Returns true if succeeded</returns>
+        public bool Fill(double addedAmount) //Fill container with amount.
+        {
+            double total = addedAmount + Content; //Calculate total of projected 
             if (total > Size) //Check overflow
             {
                 if (AllowOverflow)
                 {
-                    Console.WriteLine($"{this.Name}({this.Content}/{this.Size}) has overflowed {total - Size}.");
                     Content = Size;
+                    Console.WriteLine($"Added {addedAmount} to {Name}({Content}/{Size}) and it overflowed by {total - Size}.");
                     return true;
                 }
                 else
                 {
-                    Console.WriteLine($"{this.Name}({this.Content}/{this.Size}) would overflow, action aborted.");
+                    Console.WriteLine($"Adding {addedAmount} to {Name}({Content}/{Size}) would overflow, action aborted.");
                     return false;
                 }
             }
@@ -100,35 +128,43 @@ namespace Buckets.Containers
                 return true;
             }
         }
-        public Transfer(Container target, int movedAmount = null) //Transfer amount to target
+        #endregion
+
+        #region Transfer
+        /// <summary>
+        /// Transfer container content to target
+        /// </summary>
+        /// <param name="target"></param>
+        /// <param name="nullableAmount"></param>
+        public void Transfer(Container target, double? nullableAmount = null) //Transfer amount to target
         {
-            if (movedAmount == null) { movedAmount = this.Content; } //Check if amount was given, otherwise take amount in source
+            double amount = nullableAmount == null ? this.Content : (double)nullableAmount; //Check if amount was given. Otherwise grab content of source.
             //Method that checks everything in advance, not using existing methods, doubling code
-            if (movedAmount > this.Content) //Check if source has enough
+            if (amount <= this.Content) //Check if source has enough
             {
-                if (target.Content + movedAmount < target.Size) //Check if no overflow
+                if (target.Content + amount < target.Size) //Check if no overflow
                 {
-                    target.Content += movedAmount;
-                    this.Content -= movedAmount;
-                    Console.WriteLine($"Moved {movedAmount} from {this.Name}({this.Content}/{this.Size}) to {target.Name}({target.Content}/{target.Size})."); //Is there a way to be sure doubles get rounded properly when used as string?
+                    target.Content += amount;
+                    this.Content -= amount;
+                    Console.WriteLine($"Transferred {amount} from {this.Name}({this.Content}/{this.Size}) to {target.Name}({target.Content}/{target.Size})."); //Is there a way to be sure doubles get rounded properly when used as string?
                 }
                 else //It will overflow
                 {
-                    double overflow = target.Content + movedAmount - target.Size; //Get overflow amount
-                    target.Content = target.size;
+                    double overflow = target.Content + amount - target.Size; //Get overflow amount
+                    target.Content = target._size;
                     if (AllowOverflow) //Lose the overflow
                     {
-                        this.Content -= movedAmount;
-                        Console.WriteLine($"Moved {movedAmount} from {this.Name}({this.Content}/{this.Size}) to {target.Name}({target.Content}/{target.Size}) and overflowed with {overflow}.");
+                        this.Content -= amount;
+                        Console.WriteLine($"Transferred {amount} from {this.Name}({this.Content}/{this.Size}) to {target.Name}({target.Content}/{target.Size}) and overflowed with {overflow}.");
                     }
                     else //Return the overflow to the source
                     {
                         this.Content = overflow;
-                        Console.WriteLine($"Moved {movedAmount - overflow} from {this.Name}({this.Content}/{this.Size}) to {target.Name}({target.Content}/{target.Size})."); 
+                        Console.WriteLine($"Transferred {amount - overflow} from {this.Name}({this.Content}/{this.Size}) to {target.Name}({target.Content}/{target.Size}).");
                     }
                 }
             }
-            else { Console.WriteLine($"Transfer cancelled, not enough ({movedAmount}) in {this.Name}({this.Content}/{this.Size})."); }
+            else { Console.WriteLine($"Transfer to {target.Name} cancelled, not enough ({amount}) in {this.Name}({this.Content}/{this.Size})."); }
 
 
             //Method that uses other methods, and undoes method if later methods fail. 
@@ -148,6 +184,8 @@ namespace Buckets.Containers
             {
                 Console.WriteLine($"Transfer Failed, {this.Name}({this.Content}/{this.Size}) does not have {amount}");
             }*/
+            #endregion
+
         }
     }
 

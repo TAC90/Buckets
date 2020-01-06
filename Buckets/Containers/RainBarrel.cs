@@ -2,17 +2,17 @@
 {
     class RainBarrel : Container
     {
-        public enum barrelSize
+        public enum BarrelSize
         {
-            small,
-            medium,
-            large
+            small = 80, 
+            medium = 120,
+            large = 160
         }
-        public RainBarrel(barrelSize size, double content = 0, string name = "Rain Barrel")
+        public RainBarrel(BarrelSize size, double content = 0, string name = "Rain Barrel")
         {
-
             Content = content;
             Name = name;
+            Size = (double)size; 
         }
     }
 }
